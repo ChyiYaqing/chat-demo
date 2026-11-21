@@ -128,6 +128,18 @@ export const zh = {
   upload: '上传',
   uploadUnsupportedFormat:
     '上传的文件包含暂未支持的文件格式，请转换文件格式后重试。支持 PDF、DOC、XLSX、PPT、图片、文本、代码等。',
+  ollamaImagesOnly: '本地模型仅支持图片附件。',
+  settingsModelSource: '模型来源',
+  settingsModelSourceDeepseek: 'DeepSeek API',
+  settingsModelSourceOllama: 'Ollama（本地）',
+  ollamaUrl: 'Ollama 地址',
+  ollamaModel: '本地模型',
+  ollamaModelPlaceholder: '选择模型',
+  ollamaRefresh: '刷新',
+  ollamaNoModels: '未发现模型，请先执行 `ollama pull <模型名>`。',
+  ollamaConnectFailed:
+    '无法连接到该地址的 Ollama，请确认服务已启动，并已允许当前来源（OLLAMA_ORIGINS）。',
+  ollamaHint: '在本机运行，无需 API Key。联网搜索、链接阅读、文档附件和语音不可用。',
   uploadFileStatusFailed: '上传失败',
   uploadRetry: '{message}，点击重试',
   chatInputPlaceholderChat: '请输入消息',

@@ -35,6 +35,12 @@ The output is written to `dist/`. Deploy it to a static web server or open `dist
 - Markdown, syntax highlighting, KaTeX math, and Mermaid diagrams.
 - Simplified Chinese and English, light and dark themes, mobile layouts, location settings, and chat history import and export.
 
+## Local models (Ollama)
+
+Settings → General → Model source → Ollama (local) lets you chat with models installed in a local [Ollama](https://ollama.com) (0.5+) without an API Key. The address defaults to `http://localhost:11434`; the model list is read from `/api/tags`. If the app is served from another origin, allow it with `OLLAMA_ORIGINS`.
+
+Requests go to Ollama's Anthropic-compatible `/v1/messages` with only the standard fields. Streaming, stop, regenerate, branches, deep thinking, and image attachments (multimodal models only, sent inline as base64) are supported. Web search, link reading, document attachments, voice input, and read aloud are DeepSeek-only and unavailable in this mode.
+
 ## Data and storage
 
 Your API key and settings are stored in the browser's localStorage. Conversations and original attachments are stored in IndexedDB. Local data is isolated by browser profile and site origin. Sending messages, uploading attachments, and using speech features sends the relevant content to the configured API service.

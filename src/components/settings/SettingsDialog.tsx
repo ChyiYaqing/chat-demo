@@ -22,6 +22,7 @@ import {
   isChineseBrowser,
   setLocale,
   setLocation,
+  setOllamaModel,
   setThemePreference,
   setTtsVoice,
   useSettings,
@@ -32,6 +33,7 @@ import { Button } from '../base/Button.js'
 import { Modal } from '../base/Modal.js'
 import { Select } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
+import { OllamaSetting } from './OllamaSetting.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
 import styles from './Settings.module.css'
@@ -96,6 +98,7 @@ const SettingsContent = () => {
         <div role="tabpanel" className={styles.content}>
           {section === 'general' ? (
             <>
+              <ModelSourceSetting />
               <ThemeSetting />
               <LocaleSetting />
               <TtsVoiceSetting />
@@ -266,6 +269,40 @@ const LocationSetting = () => {
         </div>
       }
     />
+  )
+}
+
+const ModelSourceSetting = () => {
+  const t = useTranslate()
+  const local = useSettings((state) => state.ollamaModel !== null)
+  const lastModel = useRef<string | null>(null)
+  return (
+    <>
+      <SettingCell
+        label={t('settingsModelSource')}
+        status={null}
+        action={
+          <Select
+            ariaLabel={t('settingsModelSource')}
+            value={local ? 'ollama' : 'deepseek'}
+            options={[
+              { value: 'deepseek', label: t('settingsModelSourceDeepseek') },
+              { value: 'ollama', label: t('settingsModelSourceOllama') },
+            ]}
+            onChange={(value) => {
+              if (value === 'deepseek') {
+                lastModel.current = useSettings.getState().ollamaModel
+                setOllamaModel(null)
+              } else {
+                // 切到 Ollama 时先占位，模型列表加载后由 OllamaSetting 选定真实模型
+                setOllamaModel(lastModel.current ?? '')
+              }
+            }}
+          />
+        }
+      />
+      {local ? <OllamaSetting /> : null}
+    </>
   )
 }
 

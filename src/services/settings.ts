@@ -17,6 +17,10 @@ type Settings = {
   thinking: boolean
   search: boolean
   siderCollapsed: boolean
+  /** Ollama 服务地址 */
+  ollamaUrl: string
+  /** 选中的 Ollama 模型；为 null 时使用 DeepSeek API */
+  ollamaModel: string | null
 }
 
 const KEYS = {
@@ -28,6 +32,8 @@ const KEYS = {
   thinking: 'chat-demo:thinking',
   search: 'chat-demo:search',
   siderCollapsed: 'chat-demo:sider-collapsed',
+  ollamaUrl: 'chat-demo:ollama-url',
+  ollamaModel: 'chat-demo:ollama-model',
 } as const
 
 const read = (key: string) => {
@@ -87,6 +93,8 @@ const initialThemePreference = (): ThemePreference => {
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
+export const DEFAULT_OLLAMA_URL = 'http://localhost:11434'
+
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
   locale: initialLocale(),
@@ -96,6 +104,8 @@ export const useSettings = create<Settings>(() => ({
   thinking: read(KEYS.thinking) === 'true',
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
+  ollamaUrl: read(KEYS.ollamaUrl) || DEFAULT_OLLAMA_URL,
+  ollamaModel: read(KEYS.ollamaModel),
 }))
 
 export const setLocale = (locale: Locale) => {
@@ -138,3 +148,18 @@ export const setSiderCollapsed = (siderCollapsed: boolean) => {
   write(KEYS.siderCollapsed, String(siderCollapsed))
   useSettings.setState({ siderCollapsed })
 }
+
+export const setOllamaUrl = (value: string) => {
+  const ollamaUrl = value.trim().replace(/\/+$/, '') || DEFAULT_OLLAMA_URL
+  write(KEYS.ollamaUrl, ollamaUrl)
+  useSettings.setState({ ollamaUrl })
+}
+
+/** 选择 Ollama 模型；传 null 切回 DeepSeek API */
+export const setOllamaModel = (ollamaModel: string | null) => {
+  write(KEYS.ollamaModel, ollamaModel)
+  useSettings.setState({ ollamaModel })
+}
+
+/** 当前是否使用本地 Ollama 模型 */
+export const isLocalMode = () => useSettings.getState().ollamaModel !== null

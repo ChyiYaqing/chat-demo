@@ -9,6 +9,7 @@ import {
   validateFiles,
   type UploadTask,
 } from '../attachments.js'
+import { isLocalMode } from '../settings.js'
 import type { FileAttachment } from './types.js'
 
 export type DraftAttachment = {
@@ -65,7 +66,11 @@ export const addDraftFiles = (
   if (files.length === 0) {
     return null
   }
-  const error = validateFiles(files, getDraft(sessionId).attachments.length)
+  // 本地模型只能处理图片
+  const error =
+    isLocalMode() && files.some((file) => !isImage(resolveMimeType(file)))
+      ? ({ key: 'ollamaImagesOnly' } as const)
+      : validateFiles(files, getDraft(sessionId).attachments.length)
   if (error) {
     return error
   }
@@ -98,15 +103,16 @@ export const prepareDraftMessage = (draft: Draft, tasks: Record<string, UploadTa
   if (!text && draft.attachments.length === 0) {
     return null
   }
-  const files: (FileAttachment & { serverId: string; blob: Blob })[] = []
+  const files: (FileAttachment & { blob: Blob })[] = []
   for (const attachment of draft.attachments) {
     const task = tasks[attachment.id]
-    if (task?.status !== 'done' || !task.serverId) {
+    if (task?.status !== 'done') {
       return null
     }
     files.push({
       id: attachment.id,
-      serverId: task.serverId,
+      // 本地模型下为空，切回 DeepSeek 后发送前补传
+      serverId: task.serverId || null,
       name: attachment.file.name,
       size: attachment.file.size,
       isImage: attachment.isImage,

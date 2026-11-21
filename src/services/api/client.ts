@@ -8,6 +8,7 @@ import type {
   FileObject,
   FilePurpose,
   MessageStreamEvent,
+  OllamaMessageRequest,
 } from './types.js'
 
 /** 构建期 API 地址，默认 https://api.deepseek.com；本地开发支持开发服务器代理 */
@@ -157,6 +158,14 @@ export async function* streamMessage(
     body: JSON.stringify({ ...body, stream: true }),
     signal,
   })
+  yield* readMessageStream(response, signal)
+}
+
+/** 读取 Messages API 的 SSE 响应，逐个产出事件，收到 message_stop 时结束 */
+async function* readMessageStream(
+  response: Response,
+  signal: AbortSignal
+): AsyncGenerator<MessageStreamEvent> {
   const contentType = response.headers.get('Content-Type') ?? ''
   if (!response.body || !contentType.includes('text/event-stream')) {
     throw await readErrorResponse(response, 'protocol', '')
@@ -187,4 +196,32 @@ export async function* streamMessage(
   }
   // 服务端没有提供错误内容时保持为空，不推测断流原因。
   throw new ApiError('interrupted', '')
+}
+
+/** Ollama 返回的本地模型列表（GET /api/tags） */
+export const listOllamaModels = async (
+  baseUrl: string,
+  signal?: AbortSignal
+): Promise<string[]> => {
+  const response = await request(`${baseUrl}/api/tags`, { method: 'GET', signal })
+  const body = (await response.json()) as { models?: { name?: unknown }[] }
+  return (body.models ?? []).flatMap(({ name }) => (typeof name === 'string' ? [name] : []))
+}
+
+/**
+ * POST {ollamaUrl}/v1/messages（Ollama 的 Anthropic 兼容接口）。
+ * 不带自定义请求头：Ollama 的 CORS 预检只放行 Content-Type 等常规头，x-api-key 会被浏览器拦截。
+ */
+export async function* streamOllamaMessage(
+  baseUrl: string,
+  body: OllamaMessageRequest,
+  signal: AbortSignal
+): AsyncGenerator<MessageStreamEvent> {
+  const response = await request(`${baseUrl}/v1/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    body: JSON.stringify({ ...body, stream: true }),
+    signal,
+  })
+  yield* readMessageStream(response, signal)
 }
