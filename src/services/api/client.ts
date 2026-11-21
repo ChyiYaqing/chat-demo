@@ -213,7 +213,7 @@ export const listOllamaModels = async (
     typeof name === 'string' &&
     remote_host === undefined &&
     remote_model === undefined &&
-    !/[:-]cloud$/.test(name)
+    !/[:-]cloud$/i.test(name)
       ? [name]
       : []
   )

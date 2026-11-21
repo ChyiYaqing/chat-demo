@@ -726,6 +726,10 @@ export const continueReply = (sessionId: string, messageId: string) => {
     ...previous,
     // 未记录请求配置的回复，续写时使用默认模型和当前开关。
     model: previous.model ?? MODEL,
+    // 旧记录没有 ollamaUrl：续写实际发往当前地址，写回后才能绑定到这台服务
+    ...(useSettings.getState().ollamaModel !== null
+      ? { ollamaUrl: useSettings.getState().ollamaUrl }
+      : {}),
     thinking: previous.thinking ?? thinking,
     search: previous.search ?? search,
     status: 'pending',
