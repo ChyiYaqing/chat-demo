@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { createId } from '../../utils/id.js'
-import { ApiError, streamMessage } from '../api/client.js'
+import { ApiError, streamMessage, streamOllamaMessage } from '../api/client.js'
 import type { ChatModel, CreateMessageRequest } from '../api/types.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
 import {
@@ -28,6 +28,7 @@ import {
   settleReply,
   toRequestMessages,
 } from './reply.js'
+import { createOllamaRequest, loadInlineImages, localTitle } from './ollama.js'
 import {
   toSessionSummary,
   type AssistantMessage,
@@ -266,7 +267,7 @@ const createReply = (): AssistantMessage => {
     id: createId(),
     role: 'assistant',
     createdAt: Date.now(),
-    model: MODEL,
+    model: useSettings.getState().ollamaModel ?? MODEL,
     thinking,
     search,
     prefix: true,
@@ -795,7 +796,7 @@ const ensureServerId = async (apiKey: string, file: FileAttachment): Promise<str
     return file.serverId
   }
   const task = useUploads.getState().tasks[file.id]
-  if (task?.status === 'done') {
+  if (task?.status === 'done' && task.serverId) {
     return task.serverId
   }
   const blob = await db.loadFile(file.id)
@@ -1004,7 +1005,20 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
       let preparing = true
       let receivedContent = false
       try {
-        const prepared = await prepareFiles(sessionId, request, controller.signal)
+        const { ollamaModel, ollamaUrl } = useSettings.getState()
+        // 本地模型不经过 Files API：图片以 base64 内联，其余附件不进入请求
+        const prepared =
+          ollamaModel !== null ? request : await prepareFiles(sessionId, request, controller.signal)
+        const inlineImages =
+          ollamaModel !== null
+            ? await loadInlineImages(
+                [
+                  ...prepared.question.files,
+                  ...getContextRounds(prepared.history).flatMap(([user]) => user.files),
+                ],
+                controller.signal
+              )
+            : undefined
         preparing = false
         // 附件就绪后获取本轮信息；续写沿用原回答快照，重新生成的快照独立保存。
         const latestReminder = prepared.prefix
@@ -1018,21 +1032,38 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           prepared.question,
           prepared.prefix,
           initial.thinking ?? false,
-          latestReminder
+          latestReminder,
+          inlineImages
         )
-        const events = streamMessage(
-          useSettings.getState().apiKey ?? '',
-          {
-            model: initial.model ?? MODEL,
-            system: SYSTEM_PROMPT,
-            messages,
-            thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
-            safety_check: SAFETY_CHECK,
-            tools: serverTools(initial.search ?? false),
-            ...(titleRequests.has(controller) ? { title: { enabled: true } } : {}),
-          },
-          controller.signal
-        )
+        if (ollamaModel !== null && titleRequests.has(controller)) {
+          // 本地模型没有服务端标题：取首条提问前若干字符
+          const title = localTitle(
+            prepared.question.content,
+            prepared.question.files[0]?.name ?? ''
+          )
+          updateSession(sessionId, (session) => (session.title ? session : { ...session, title }))
+          titleRequests.delete(controller)
+        }
+        const events =
+          ollamaModel !== null
+            ? streamOllamaMessage(
+                ollamaUrl,
+                createOllamaRequest(ollamaModel, messages, initial.thinking ?? false),
+                controller.signal
+              )
+            : streamMessage(
+                useSettings.getState().apiKey ?? '',
+                {
+                  model: initial.model ?? MODEL,
+                  system: SYSTEM_PROMPT,
+                  messages,
+                  thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
+                  safety_check: SAFETY_CHECK,
+                  tools: serverTools(initial.search ?? false),
+                  ...(titleRequests.has(controller) ? { title: { enabled: true } } : {}),
+                },
+                controller.signal
+              )
         const blockIndexes = new Map<number, number>()
         for await (const event of events) {
           receivedContent ||= event.type === 'content_block_start'

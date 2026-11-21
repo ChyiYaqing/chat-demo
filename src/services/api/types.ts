@@ -4,7 +4,8 @@
  * 声明 deepseek_web_search / deepseek_read_url 或设置 safety_check.level 为 high 时进入扩展模式。
  */
 
-export type ChatModel = 'deepseek-flash' | 'deepseek-v4-pro'
+/** DeepSeek 模型，或 Ollama 本地模型名（如 gemma3:12b） */
+export type ChatModel = 'deepseek-flash' | 'deepseek-v4-pro' | (string & Record<never, never>)
 
 // ---------- 响应：内容块 ----------
 
@@ -134,6 +135,12 @@ export type FileBlockParam = {
   source: { type: 'file'; file_id: string }
 }
 
+/** 内联图片块：Ollama 不支持 Files API，图片以 base64 随请求发送 */
+export type Base64ImageBlockParam = {
+  type: 'image'
+  source: { type: 'base64'; media_type: string; data: string }
+}
+
 /** 接口接受的调用块；历史只回传 kind 为 read_link 的调用 */
 export type ServerToolUseBlockParam = Pick<
   ServerToolUseBlock,
@@ -157,7 +164,7 @@ export type AssistantBlockParam =
 export type MessageParam =
   /** Chat Engine 扩展角色，位于对应 user 前；需服务端支持 latest_reminder。 */
   | { role: 'latest_reminder'; content: string }
-  | { role: 'user'; content: string | (FileBlockParam | TextBlockParam)[] }
+  | { role: 'user'; content: string | (FileBlockParam | Base64ImageBlockParam | TextBlockParam)[] }
   | { role: 'assistant'; content: AssistantBlockParam[] }
 
 /** 开启联网搜索与边想边搜 */
@@ -180,6 +187,17 @@ export type CreateMessageRequest = {
   tools: (DeepseekWebSearchTool | DeepseekReadUrlTool)[]
   safety_check: { level: 'high' }
   title?: { enabled: boolean }
+}
+
+/** Ollama Anthropic 兼容接口的请求体：不含 DeepSeek 的扩展字段 */
+export type OllamaMessageRequest = {
+  model: string
+  messages: {
+    role: 'user' | 'assistant'
+    content: string | (Base64ImageBlockParam | TextBlockParam)[]
+  }[]
+  max_tokens: number
+  thinking?: { type: 'enabled'; budget_tokens: number }
 }
 
 // ---------- 响应：流式事件 ----------

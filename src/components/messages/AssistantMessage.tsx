@@ -1,3 +1,4 @@
+import { isLocalMode } from '../../services/settings.js'
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
 import { memo } from 'react'
@@ -143,7 +144,7 @@ export const AssistantMessage = memo(function AssistantMessage({
           <BranchSwitcher versions={versions} disabled={busy} onSelect={onSelectVersion} />
           <div className={clsx(styles.actions, isLast && styles.alwaysShow)}>
             {copyText ? <CopyButton text={copyText} /> : null}
-            {responseText && !refused ? (
+            {responseText && !refused && !isLocalMode() ? (
               <ReadAloudButton messageId={message.id} text={responseText} />
             ) : null}
             <IconButton

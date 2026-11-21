@@ -15,9 +15,9 @@ export const openSettings = (section: SettingsSection) =>
 
 export const closeSettings = () => useSettingsDialog.setState({ open: false })
 
-/** 没有 API Key 时打开设置并选中 API Key 所在的「数据管理」，返回是否已有 Key */
+/** 没有 API Key 时打开设置并选中 API Key 所在的「数据管理」，返回是否已有 Key；使用本地模型时无需 Key */
 export const ensureApiKey = () => {
-  if (useSettings.getState().apiKey) {
+  if (useSettings.getState().apiKey || useSettings.getState().ollamaModel !== null) {
     return true
   }
   openSettings('data')

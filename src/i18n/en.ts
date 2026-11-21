@@ -136,6 +136,19 @@ export const en = {
   upload: 'Upload',
   uploadUnsupportedFormat:
     'The selected files include unsupported formats. Please convert them and try again. Supported: PDF, DOC, XLSX, PPT, images, text, code, and more.',
+  ollamaImagesOnly: 'Local models only support image attachments.',
+  settingsModelSource: 'Model source',
+  settingsModelSourceDeepseek: 'DeepSeek API',
+  settingsModelSourceOllama: 'Ollama (local)',
+  ollamaUrl: 'Ollama address',
+  ollamaModel: 'Local model',
+  ollamaModelPlaceholder: 'Select a model',
+  ollamaRefresh: 'Refresh',
+  ollamaNoModels: 'No models found. Run `ollama pull <model>` first.',
+  ollamaConnectFailed:
+    'Cannot reach Ollama at this address. Make sure it is running and allows this origin (OLLAMA_ORIGINS).',
+  ollamaHint:
+    'Runs on your machine without an API Key. Web search, link reading, document attachments and voice are unavailable.',
   uploadFileStatusFailed: 'Upload failed',
   uploadRetry: '{message}. Click to retry',
   chatInputPlaceholderChat: 'Enter a message',

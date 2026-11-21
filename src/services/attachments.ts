@@ -5,6 +5,7 @@ import { uploadFile } from './api/client.js'
 import { classifyApiError, getUploadErrorInfo, isRetryableApiError } from './api/errors.js'
 import type { FilePurpose } from './api/types.js'
 import { loadFile } from './chat/db.js'
+import { isLocalMode } from './settings.js'
 import type { FileAttachment } from './chat/types.js'
 import { ACCEPT_FILE_EXTS } from './uploadExts.js'
 
@@ -177,6 +178,11 @@ export const uploadAttachment = (
   const current = pending.get(id)
   if (current) {
     return current.promise
+  }
+  if (isLocalMode()) {
+    // 本地模型不上传：附件原件留在本地，发送时内联；serverId 为空，切回 DeepSeek 后发送前再补传
+    setTask(id, { status: 'done', serverId: '' })
+    return Promise.resolve('')
   }
   const controller = new AbortController()
   setTask(id, { status: 'uploading' })
