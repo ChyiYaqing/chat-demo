@@ -168,11 +168,12 @@ const readDelta = (value: unknown): ContentBlockDelta | null => {
 const isCount = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
 
-/** 输入、输出必填；缓存计数缺省按 0 处理（Ollama 不返回 cache_creation_input_tokens）。 */
+/** 只有输出必填；输入与缓存计数缺省按 0 处理（Ollama 不返回缓存创建数，旧版结束帧只有 output_tokens）。 */
 const readUsage = (value: unknown) =>
-  isRecord(value) && isCount(value.input_tokens) && isCount(value.output_tokens)
+  isRecord(value) && isCount(value.output_tokens)
     ? {
         ...value,
+        input_tokens: isCount(value.input_tokens) ? value.input_tokens : 0,
         cache_creation_input_tokens: isCount(value.cache_creation_input_tokens)
           ? value.cache_creation_input_tokens
           : 0,

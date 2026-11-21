@@ -129,6 +129,7 @@ export const zh = {
   uploadUnsupportedFormat:
     '上传的文件包含暂未支持的文件格式，请转换文件格式后重试。支持 PDF、DOC、XLSX、PPT、图片、文本、代码等。',
   ollamaModelRequired: '尚未选择本地模型，请在设置中选择。',
+  ollamaImageUnreadable: '无法读取图片「{name}」，请移除后重试。',
   ollamaImagesOnly: '本地模型仅支持图片附件。',
   settingsModelSource: '模型来源',
   settingsModelSourceDeepseek: 'DeepSeek API',

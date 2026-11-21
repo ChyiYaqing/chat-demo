@@ -1,4 +1,5 @@
 import type { Base64ImageBlockParam, MessageParam, OllamaMessageRequest } from '../api/types.js'
+import { ApiError } from '../api/client.js'
 import { resizeUploadImage } from '../../utils/resizeUploadImage.js'
 import * as db from './db.js'
 import type { FileAttachment } from './types.js'
@@ -19,7 +20,9 @@ const readBase64 = (blob: Blob) =>
 /** 读取本地原件，生成内联 base64 图片；原件不存在（如导入的历史）的图片不进入请求。 */
 export const loadInlineImages = async (
   files: FileAttachment[],
-  signal: AbortSignal
+  signal: AbortSignal,
+  /** 本轮提问的附件：解码失败时直接报错，不能让模型在缺图的情况下回答 */
+  requiredIds: Set<string> = new Set()
 ): Promise<Map<string, Base64ImageBlockParam>> => {
   const images = new Map<string, Base64ImageBlockParam>()
   for (const file of files) {
@@ -44,8 +47,14 @@ export const loadInlineImages = async (
         },
       })
     } catch {
-      // 无法解码的图片不进入请求，不阻断整轮对话；中止则照常抛出
+      // 中止照常抛出；历史图片解码失败时跳过，不阻断整轮对话
       signal.throwIfAborted()
+      if (requiredIds.has(file.id)) {
+        throw new ApiError('protocol', {
+          key: 'ollamaImageUnreadable',
+          params: { name: file.name },
+        })
+      }
     }
   }
   return images

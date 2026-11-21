@@ -46,6 +46,7 @@ export const AssistantMessage = memo(function AssistantMessage({
 }) {
   const t = useTranslate()
   const ollamaModel = useSettings((state) => state.ollamaModel)
+  const ollamaUrl = useSettings((state) => state.ollamaUrl)
   const view = useReplyView(message, streaming)
   const panelEntry = useSearchPanel((state) => state.entry)
   const notice = streaming ? null : describeReply(message)
@@ -159,7 +160,7 @@ export const AssistantMessage = memo(function AssistantMessage({
               }}
             />
           </div>
-          {isLast && canContinueReply(message, ollamaModel) ? (
+          {isLast && canContinueReply(message, ollamaModel, ollamaUrl) ? (
             <Button
               variant="outlined"
               size="s"

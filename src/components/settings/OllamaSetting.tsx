@@ -33,8 +33,9 @@ export const OllamaSetting = () => {
       }
       setModels(names)
       setError(names.length === 0 ? 'empty' : null)
-      if (names.length > 0 && !names.includes(useSettings.getState().ollamaModel ?? '')) {
-        setOllamaModel(names[0])
+      // 已保存的模型不在本地列表里（已删除，或是升级前保存的云端模型）：改选第一个，没有则清空
+      if (!names.includes(useSettings.getState().ollamaModel ?? '')) {
+        setOllamaModel(names[0] ?? '')
       }
     } catch {
       if (!stale()) {

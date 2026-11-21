@@ -15,6 +15,9 @@ export const openSettings = (section: SettingsSection) =>
 
 export const closeSettings = () => useSettingsDialog.setState({ open: false })
 
+/** 添加附件只是写入本地草稿：本地模型下不要求模型已选定；DeepSeek 下仍要求 API Key（上传需要） */
+export const ensureCanAttach = () => useSettings.getState().ollamaModel !== null || ensureApiKey()
+
 /** 没有 API Key 时打开设置并选中 API Key 所在的「数据管理」，返回是否已有 Key；使用本地模型时无需 Key */
 export const ensureApiKey = () => {
   const { apiKey, ollamaModel } = useSettings.getState()

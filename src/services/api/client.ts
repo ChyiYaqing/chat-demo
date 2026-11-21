@@ -207,12 +207,9 @@ export const listOllamaModels = async (
   const body = (await response.json()) as {
     models?: { name?: unknown; remote_host?: unknown; remote_model?: unknown }[]
   }
-  // 排除云端模型（带 remote_* 字段或 -cloud / :cloud 后缀）：它们会把对话转发到远程服务，不是「本地」模型。
+  // 排除云端模型（带 remote_* 元数据）：它们会把对话转发到远程服务，不是「本地」模型。
   return (body.models ?? []).flatMap(({ name, remote_host, remote_model }) =>
-    typeof name === 'string' &&
-    remote_host === undefined &&
-    remote_model === undefined &&
-    !/[:-]cloud$/.test(name)
+    typeof name === 'string' && remote_host === undefined && remote_model === undefined
       ? [name]
       : []
   )

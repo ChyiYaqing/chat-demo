@@ -133,7 +133,13 @@ export const applyEvent = (
         ...next,
         stopReason: event.delta.stop_reason,
         stopDetails: event.delta.stop_details,
-        usage: event.usage ?? next.usage,
+        // 结束帧没带输入计数时（读成 0），保留开始帧里的输入计数
+        usage: event.usage
+          ? {
+              ...event.usage,
+              input_tokens: event.usage.input_tokens || (next.usage?.input_tokens ?? 0),
+            }
+          : next.usage,
       }
     default:
       return next
@@ -175,13 +181,14 @@ export const getReplyText = (reply: AssistantMessage) =>
  */
 export const canContinueReply = (
   reply: AssistantMessage,
-  ollamaModel: string | null = null
+  ollamaModel: string | null = null,
+  ollamaUrl = ''
 ): boolean => {
   if (
     !reply.prefix ||
     // 续写必须沿用原回复的模型来源：Ollama 模型名带 tag（含 ':'），DeepSeek 模型名不带。
     (ollamaModel !== null
-      ? reply.model !== ollamaModel
+      ? reply.model !== ollamaModel || reply.ollamaUrl !== ollamaUrl
       : reply.model != null && reply.model.includes(':')) ||
     reply.stopReason === 'refusal' ||
     reply.stopReason === 'tool_use' ||

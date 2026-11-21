@@ -268,6 +268,9 @@ const createReply = (): AssistantMessage => {
     role: 'assistant',
     createdAt: Date.now(),
     model: useSettings.getState().ollamaModel ?? MODEL,
+    ...(useSettings.getState().ollamaModel !== null
+      ? { ollamaUrl: useSettings.getState().ollamaUrl }
+      : {}),
     thinking,
     search,
     prefix: true,
@@ -710,7 +713,11 @@ export const continueReply = (sessionId: string, messageId: string) => {
     question?.role !== 'user' ||
     previous?.role !== 'assistant' ||
     previous.id !== messageId ||
-    !canContinueReply(previous, useSettings.getState().ollamaModel)
+    !canContinueReply(
+      previous,
+      useSettings.getState().ollamaModel,
+      useSettings.getState().ollamaUrl
+    )
   ) {
     return
   }
@@ -1021,7 +1028,8 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
                   ...prepared.question.files,
                   ...getContextRounds(prepared.history).flatMap(([user]) => user.files),
                 ],
-                controller.signal
+                controller.signal,
+                new Set(prepared.question.files.map((file) => file.id))
               )
             : undefined
         // 附件就绪后获取本轮信息；续写沿用原回答快照，重新生成的快照独立保存。

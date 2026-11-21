@@ -37,9 +37,9 @@ The output is written to `dist/`. Deploy it to a static web server or open `dist
 
 ## Local models (Ollama)
 
-Settings → General → Model source → Ollama (local) lets you chat with models installed in a local [Ollama](https://ollama.com) (0.14+) without an API Key. Cloud models (`-cloud`) are hidden because they forward chats to a remote service. The address defaults to `http://localhost:11434`; the model list is read from `/api/tags`. If the app is served from another origin, allow it with `OLLAMA_ORIGINS`.
+Settings → General → Model source → Ollama (local) lets you chat with models installed in a local [Ollama](https://ollama.com) (0.14+) without an API Key. Cloud models (those with remote metadata) are hidden because they forward chats to a remote service. The address defaults to `http://localhost:11434`; the model list is read from `/api/tags`. If the app is served from another origin, allow it with `OLLAMA_ORIGINS`.
 
-Requests go to Ollama's Anthropic-compatible `/v1/messages` with only the standard fields. Streaming, stop, regenerate, branches, deep thinking, and image attachments (multimodal models only, sent inline as base64) are supported. Web search, link reading, document attachments, voice input, and read aloud are DeepSeek-only and unavailable in this mode.
+Requests go to Ollama's Anthropic-compatible `/v1/messages` with only the standard fields. Streaming, stop, regenerate, branches, deep thinking, and image attachments (multimodal models only, sent inline as base64) are supported. Some older Ollama versions ignore the request to turn thinking off for thinking-capable models. Web search, link reading, document attachments, voice input, and read aloud are DeepSeek-only and unavailable in this mode.
 
 ## Data and storage
 
