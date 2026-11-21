@@ -37,7 +37,7 @@ pnpm build
 
 ## 本地模型（Ollama）
 
-在「设置 → 通用 → 模型来源」选择「Ollama（本地）」，即可使用本机 [Ollama](https://ollama.com)（0.5+）中的模型对话，无需 API Key。地址默认 `http://localhost:11434`，模型列表读取自 `/api/tags`。如果页面部署在其他来源，需通过 `OLLAMA_ORIGINS` 放行。
+在「设置 → 通用 → 模型来源」选择「Ollama（本地）」，即可使用本机 [Ollama](https://ollama.com)（0.14+）中的模型对话，无需 API Key。云端模型（`-cloud`）会把对话转发到远程服务，因此不在列表中。地址默认 `http://localhost:11434`，模型列表读取自 `/api/tags`。如果页面部署在其他来源，需通过 `OLLAMA_ORIGINS` 放行。
 
 请求发往 Ollama 的 Anthropic 兼容接口 `/v1/messages`，只携带标准字段。支持流式回复、停止、重新生成、分支、深度思考和图片附件（仅多模态模型，以 base64 内联发送）；联网搜索、链接阅读、文档附件、语音输入和朗读是 DeepSeek 专有能力，该模式下不可用。
 

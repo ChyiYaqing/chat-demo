@@ -30,18 +30,23 @@ export const loadInlineImages = async (
     if (!blob) {
       continue
     }
-    const resized = await resizeUploadImage(
-      blob instanceof File ? blob : new File([blob], file.name, { type: blob.type }),
-      signal
-    )
-    images.set(file.id, {
-      type: 'image',
-      source: {
-        type: 'base64',
-        media_type: file.mimeType || resized.type || 'image/png',
-        data: await readBase64(resized),
-      },
-    })
+    try {
+      const resized = await resizeUploadImage(
+        blob instanceof File ? blob : new File([blob], file.name, { type: blob.type }),
+        signal
+      )
+      images.set(file.id, {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: file.mimeType || resized.type || 'image/png',
+          data: await readBase64(resized),
+        },
+      })
+    } catch {
+      // 无法解码的图片不进入请求，不阻断整轮对话；中止则照常抛出
+      signal.throwIfAborted()
+    }
   }
   return images
 }
@@ -84,7 +89,10 @@ export const createOllamaRequest = (
   model,
   messages: toOllamaMessages(messages),
   max_tokens: MAX_TOKENS,
-  ...(thinking ? { thinking: { type: 'enabled', budget_tokens: THINKING_BUDGET_TOKENS } } : {}),
+  // 关闭时也要显式声明：默认带思考的模型在省略该字段时仍会思考
+  thinking: thinking
+    ? { type: 'enabled', budget_tokens: THINKING_BUDGET_TOKENS }
+    : { type: 'disabled' },
 })
 
 /** 没有服务端生成标题时，取首条提问的前若干字符 */

@@ -165,11 +165,22 @@ const readDelta = (value: unknown): ContentBlockDelta | null => {
   }
 }
 
-const isUsage = (value: unknown) =>
-  isRecord(value) &&
-  ['input_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens', 'output_tokens'].every(
-    (key) => typeof value[key] === 'number' && Number.isFinite(value[key])
-  )
+const isCount = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value)
+
+/** 输入、输出必填；缓存计数缺省按 0 处理（Ollama 不返回 cache_creation_input_tokens）。 */
+const readUsage = (value: unknown) =>
+  isRecord(value) && isCount(value.input_tokens) && isCount(value.output_tokens)
+    ? {
+        ...value,
+        cache_creation_input_tokens: isCount(value.cache_creation_input_tokens)
+          ? value.cache_creation_input_tokens
+          : 0,
+        cache_read_input_tokens: isCount(value.cache_read_input_tokens)
+          ? value.cache_read_input_tokens
+          : 0,
+      }
+    : undefined
 
 /** 未识别或无法安全消费的事件静默丢弃，不影响后续有效内容与正常结束。 */
 export const readMessageEvent = (value: unknown): MessageStreamEvent | null => {
@@ -185,7 +196,7 @@ export const readMessageEvent = (value: unknown): MessageStreamEvent | null => {
         ...value,
         message: {
           ...value.message,
-          usage: isUsage(value.message.usage) ? value.message.usage : undefined,
+          usage: readUsage(value.message.usage),
         },
       } as MessageStreamEvent
     case 'content_block_start': {
@@ -220,7 +231,7 @@ export const readMessageEvent = (value: unknown): MessageStreamEvent | null => {
           ...value.delta,
           title: isOptionalString(value.delta.title) ? value.delta.title : undefined,
         },
-        usage: isUsage(value.usage) ? value.usage : undefined,
+        usage: readUsage(value.usage),
       } as MessageStreamEvent
     case 'message_stop':
       break

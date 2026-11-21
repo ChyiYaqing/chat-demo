@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { listOllamaModels } from '../../services/api/client.js'
 import { setOllamaModel, setOllamaUrl, useSettings } from '../../services/settings.js'
 import { useTranslate } from '../../i18n/index.js'
@@ -15,29 +15,38 @@ export const OllamaSetting = () => {
   const [models, setModels] = useState<string[]>([])
   const [error, setError] = useState<'connect' | 'empty' | null>(null)
 
-  const refresh = useCallback(
-    async (signal?: AbortSignal) => {
-      try {
-        const names = await listOllamaModels(url, signal)
-        setModels(names)
-        setError(names.length === 0 ? 'empty' : null)
-        if (names.length > 0 && !names.includes(useSettings.getState().ollamaModel ?? '')) {
-          setOllamaModel(names[0])
-        }
-      } catch {
-        if (!signal?.aborted) {
-          setModels([])
-          setError('connect')
-        }
+  const controllerRef = useRef<AbortController | null>(null)
+
+  /** 拉取模型列表；新请求会取消上一次，返回时地址或模型来源已变化的结果直接丢弃 */
+  const refresh = useCallback(async () => {
+    controllerRef.current?.abort()
+    const controller = new AbortController()
+    controllerRef.current = controller
+    const stale = () =>
+      controller.signal.aborted ||
+      useSettings.getState().ollamaUrl !== url ||
+      useSettings.getState().ollamaModel === null
+    try {
+      const names = await listOllamaModels(url, controller.signal)
+      if (stale()) {
+        return
       }
-    },
-    [url]
-  )
+      setModels(names)
+      setError(names.length === 0 ? 'empty' : null)
+      if (names.length > 0 && !names.includes(useSettings.getState().ollamaModel ?? '')) {
+        setOllamaModel(names[0])
+      }
+    } catch {
+      if (!stale()) {
+        setModels([])
+        setError('connect')
+      }
+    }
+  }, [url])
 
   useEffect(() => {
-    const controller = new AbortController()
-    void refresh(controller.signal)
-    return () => controller.abort()
+    void refresh()
+    return () => controllerRef.current?.abort()
   }, [refresh])
 
   const commitUrl = () => {

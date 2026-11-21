@@ -197,7 +197,7 @@ export type OllamaMessageRequest = {
     content: string | (Base64ImageBlockParam | TextBlockParam)[]
   }[]
   max_tokens: number
-  thinking?: { type: 'enabled'; budget_tokens: number }
+  thinking: { type: 'enabled'; budget_tokens: number } | { type: 'disabled' }
 }
 
 // ---------- 响应：流式事件 ----------

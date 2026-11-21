@@ -710,7 +710,7 @@ export const continueReply = (sessionId: string, messageId: string) => {
     question?.role !== 'user' ||
     previous?.role !== 'assistant' ||
     previous.id !== messageId ||
-    !canContinueReply(previous)
+    !canContinueReply(previous, useSettings.getState().ollamaModel)
   ) {
     return
   }
@@ -1009,6 +1009,11 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
         // 本地模型不经过 Files API：图片以 base64 内联，其余附件不进入请求
         const prepared =
           ollamaModel !== null ? request : await prepareFiles(sessionId, request, controller.signal)
+        preparing = false
+        if (ollamaModel === '') {
+          // 模型列表还没加载出来（或为空、连不上）：不发出 model 为空的请求
+          throw new ApiError('protocol', { key: 'ollamaModelRequired' })
+        }
         const inlineImages =
           ollamaModel !== null
             ? await loadInlineImages(
@@ -1019,7 +1024,6 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
                 controller.signal
               )
             : undefined
-        preparing = false
         // 附件就绪后获取本轮信息；续写沿用原回答快照，重新生成的快照独立保存。
         const latestReminder = prepared.prefix
           ? prepared.prefix.latestReminder

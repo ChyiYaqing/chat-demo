@@ -106,7 +106,8 @@ export const prepareDraftMessage = (draft: Draft, tasks: Record<string, UploadTa
   const files: (FileAttachment & { blob: Blob })[] = []
   for (const attachment of draft.attachments) {
     const task = tasks[attachment.id]
-    if (task?.status !== 'done') {
+    // 本地模型只能处理图片：草稿里在 DeepSeek 模式下添加的文档不会进入请求，不允许发送
+    if (task?.status !== 'done' || (isLocalMode() && !attachment.isImage)) {
       return null
     }
     files.push({

@@ -17,7 +17,16 @@ export const closeSettings = () => useSettingsDialog.setState({ open: false })
 
 /** 没有 API Key 时打开设置并选中 API Key 所在的「数据管理」，返回是否已有 Key；使用本地模型时无需 Key */
 export const ensureApiKey = () => {
-  if (useSettings.getState().apiKey || useSettings.getState().ollamaModel !== null) {
+  const { apiKey, ollamaModel } = useSettings.getState()
+  if (ollamaModel !== null) {
+    // 本地模型还没选定（列表加载中、为空或连不上）时回到通用设置
+    if (ollamaModel) {
+      return true
+    }
+    openSettings('general')
+    return false
+  }
+  if (apiKey) {
     return true
   }
   openSettings('data')

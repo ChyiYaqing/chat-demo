@@ -204,8 +204,18 @@ export const listOllamaModels = async (
   signal?: AbortSignal
 ): Promise<string[]> => {
   const response = await request(`${baseUrl}/api/tags`, { method: 'GET', signal })
-  const body = (await response.json()) as { models?: { name?: unknown }[] }
-  return (body.models ?? []).flatMap(({ name }) => (typeof name === 'string' ? [name] : []))
+  const body = (await response.json()) as {
+    models?: { name?: unknown; remote_host?: unknown; remote_model?: unknown }[]
+  }
+  // 排除云端模型（带 remote_* 字段或 -cloud / :cloud 后缀）：它们会把对话转发到远程服务，不是「本地」模型。
+  return (body.models ?? []).flatMap(({ name, remote_host, remote_model }) =>
+    typeof name === 'string' &&
+    remote_host === undefined &&
+    remote_model === undefined &&
+    !/[:-]cloud$/.test(name)
+      ? [name]
+      : []
+  )
 }
 
 /**

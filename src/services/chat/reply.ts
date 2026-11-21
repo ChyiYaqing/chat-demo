@@ -173,9 +173,16 @@ export const getReplyText = (reply: AssistantMessage) =>
  * 本轮含服务端工具调用或结果（含 READ_LINK 和孤立结果块）的回复不能续写。
  * 服务端模板提示不能作为续写前缀。
  */
-export const canContinueReply = (reply: AssistantMessage): boolean => {
+export const canContinueReply = (
+  reply: AssistantMessage,
+  ollamaModel: string | null = null
+): boolean => {
   if (
     !reply.prefix ||
+    // 续写必须沿用原回复的模型来源：Ollama 模型名带 tag（含 ':'），DeepSeek 模型名不带。
+    (ollamaModel !== null
+      ? reply.model !== ollamaModel
+      : reply.model != null && reply.model.includes(':')) ||
     reply.stopReason === 'refusal' ||
     reply.stopReason === 'tool_use' ||
     reply.blocks.some(
