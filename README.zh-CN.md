@@ -35,6 +35,12 @@ pnpm build
 - Markdown、代码高亮、KaTeX 公式和 Mermaid 图表。
 - 简体中文与英文、浅色与深色主题、移动端布局、位置设置、历史导入导出。
 
+## 本地模型（Ollama）
+
+在「设置 → 通用 → 模型来源」选择「Ollama（本地）」，即可使用本机 [Ollama](https://ollama.com)（0.5+）中的模型对话，无需 API Key。地址默认 `http://localhost:11434`，模型列表读取自 `/api/tags`。如果页面部署在其他来源，需通过 `OLLAMA_ORIGINS` 放行。
+
+请求发往 Ollama 的 Anthropic 兼容接口 `/v1/messages`，只携带标准字段。支持流式回复、停止、重新生成、分支、深度思考和图片附件（仅多模态模型，以 base64 内联发送）；联网搜索、链接阅读、文档附件、语音输入和朗读是 DeepSeek 专有能力，该模式下不可用。
+
 ## 数据
 
 API Key 和设置保存在浏览器 localStorage，会话及附件原件保存在 IndexedDB，本地数据按浏览器用户配置和站点源（origin）隔离。发送对话、上传附件和使用语音功能时，相应内容会提交给配置的 API 服务。
