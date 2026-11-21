@@ -168,19 +168,12 @@ const readDelta = (value: unknown): ContentBlockDelta | null => {
 const isCount = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
 
-/** 只有输出必填；输入与缓存计数缺省按 0 处理（Ollama 不返回缓存创建数，旧版结束帧只有 output_tokens）。 */
+/** 只有输出必填；其余计数只保留实际出现的字段，缺省值由 mergeUsage 补齐（Ollama 不返回缓存创建数，旧版结束帧只有 output_tokens）。 */
 const readUsage = (value: unknown) =>
   isRecord(value) && isCount(value.output_tokens)
-    ? {
-        ...value,
-        input_tokens: isCount(value.input_tokens) ? value.input_tokens : 0,
-        cache_creation_input_tokens: isCount(value.cache_creation_input_tokens)
-          ? value.cache_creation_input_tokens
-          : 0,
-        cache_read_input_tokens: isCount(value.cache_read_input_tokens)
-          ? value.cache_read_input_tokens
-          : 0,
-      }
+    ? Object.fromEntries(
+        Object.entries(value).filter(([key, item]) => key === 'server_tool_use' || isCount(item))
+      )
     : undefined
 
 /** 未识别或无法安全消费的事件静默丢弃，不影响后续有效内容与正常结束。 */

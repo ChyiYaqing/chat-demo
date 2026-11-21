@@ -4,6 +4,7 @@ import type {
   FileBlockParam,
   MessageParam,
   MessageStreamEvent,
+  MessageUsage,
   OutputBlockStart,
   TextBlockParam,
 } from '../api/types.js'
@@ -69,6 +70,20 @@ const updateBlock = (
   return { ...reply, blocks }
 }
 
+/** 用量按出现的字段合并：缺省字段保留已有值，没有已有值时按 0 处理。 */
+const mergeUsage = (
+  previous: MessageUsage | undefined,
+  incoming: Partial<MessageUsage> | undefined
+): MessageUsage | undefined =>
+  incoming && {
+    input_tokens: 0,
+    cache_creation_input_tokens: 0,
+    cache_read_input_tokens: 0,
+    output_tokens: 0,
+    ...previous,
+    ...incoming,
+  }
+
 /**
  * 把一个流式事件合并进回复：只追加可识别的内容块，用本次请求的临时索引映射处理增量。
  * 跳过的块不占位；续写直接追加到已有内容之后，message_delta 更新结束原因与累计用量。
@@ -83,7 +98,7 @@ export const applyEvent = (
     reply.status === 'streaming' ? reply : { ...reply, status: 'streaming' }
   switch (event.type) {
     case 'message_start':
-      return { ...next, usage: event.message.usage ?? next.usage }
+      return { ...next, usage: mergeUsage(undefined, event.message.usage) ?? next.usage }
     case 'content_block_start': {
       blockIndexes.delete(event.index)
       const block = toReplyBlock(event.content_block, now)
@@ -134,12 +149,7 @@ export const applyEvent = (
         stopReason: event.delta.stop_reason,
         stopDetails: event.delta.stop_details,
         // 结束帧没带输入计数时（读成 0），保留开始帧里的输入计数
-        usage: event.usage
-          ? {
-              ...event.usage,
-              input_tokens: event.usage.input_tokens || (next.usage?.input_tokens ?? 0),
-            }
-          : next.usage,
+        usage: mergeUsage(next.usage, event.usage) ?? next.usage,
       }
     default:
       return next
@@ -188,7 +198,8 @@ export const canContinueReply = (
     !reply.prefix ||
     // 续写必须沿用原回复的模型来源：Ollama 模型名带 tag（含 ':'），DeepSeek 模型名不带。
     (ollamaModel !== null
-      ? reply.model !== ollamaModel || reply.ollamaUrl !== ollamaUrl
+      ? reply.model !== ollamaModel ||
+        (reply.ollamaUrl !== undefined && reply.ollamaUrl !== ollamaUrl)
       : reply.model != null && reply.model.includes(':')) ||
     reply.stopReason === 'refusal' ||
     reply.stopReason === 'tool_use' ||

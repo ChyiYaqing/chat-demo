@@ -137,7 +137,9 @@ export const en = {
   uploadUnsupportedFormat:
     'The selected files include unsupported formats. Please convert them and try again. Supported: PDF, DOC, XLSX, PPT, images, text, code, and more.',
   ollamaModelRequired: 'No local model selected. Open Settings and choose one.',
-  ollamaImageUnreadable: 'Cannot read the image "{name}". Remove it and try again.',
+  ollamaImageUnreadable: 'Cannot read the image "{name}". Please send it again with another image.',
+  ollamaModelUnavailable:
+    'Model "{model}" is not available locally (it may have been removed, or it is a cloud model). Choose another one in Settings.',
   ollamaImagesOnly: 'Local models only support image attachments.',
   settingsModelSource: 'Model source',
   settingsModelSourceDeepseek: 'DeepSeek API',

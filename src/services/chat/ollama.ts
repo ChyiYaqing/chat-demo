@@ -31,6 +31,12 @@ export const loadInlineImages = async (
     }
     const blob = await db.loadFile(file.id)
     if (!blob) {
+      if (requiredIds.has(file.id)) {
+        throw new ApiError('protocol', {
+          key: 'ollamaImageUnreadable',
+          params: { name: file.name },
+        })
+      }
       continue
     }
     try {

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { createId } from '../../utils/id.js'
-import { ApiError, streamMessage, streamOllamaMessage } from '../api/client.js'
+import { ApiError, listOllamaModels, streamMessage, streamOllamaMessage } from '../api/client.js'
 import type { ChatModel, CreateMessageRequest } from '../api/types.js'
 import { extractFileIds, getFileErrorCode, isRetryableApiError } from '../api/errors.js'
 import {
@@ -1020,6 +1020,16 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
         if (ollamaModel === '') {
           // 模型列表还没加载出来（或为空、连不上）：不发出 model 为空的请求
           throw new ApiError('protocol', { key: 'ollamaModelRequired' })
+        }
+        if (ollamaModel !== null) {
+          // 发送前按当前本地列表核对：已删除的模型，或升级前保存的云端模型，都不能发出
+          const available = await listOllamaModels(ollamaUrl, controller.signal)
+          if (!available.includes(ollamaModel)) {
+            throw new ApiError('protocol', {
+              key: 'ollamaModelUnavailable',
+              params: { model: ollamaModel },
+            })
+          }
         }
         const inlineImages =
           ollamaModel !== null
